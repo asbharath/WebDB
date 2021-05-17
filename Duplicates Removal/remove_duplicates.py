@@ -15,6 +15,8 @@ def get_args():
     parser.add_argument('--encoder', type=str, choices=['CNN, DHash'], default='CNN', help='Type of encoding for features comparison')
     parser.add_argument('--threshold', type=float, default=0.9,
         help='For hashing: max_distance_threshold, for CNN: min_similarity_threshold (note: the logic of these differs, refer to documentation)')
+    parser.add_argument('--duplicates_dir', type=str, default=None,
+        help='Directory for the duplicate images to be moved to, defaults to subdirectory "duplicates" within the tested directory')
     parser.add_argument('--display_removed', action='store_true', help='Show images that will be removed, requires tkinter')
     parser.add_argument('--dry_run', action='store_true', help='Does not remove images in dry run')
     args = parser.parse_args()
@@ -46,11 +48,13 @@ def remove_duplicates(args):
             plot_duplicates(args.dir, duplicates_map, dup)
 
     if not args.dry_run:
-        print('Moving duplicate images to subdirectory "duplicates"')
-        os.makedirs(f'{args.dir}/duplicates', exist_ok=True)
+        duplicates_dir = args.duplicates_dir if args.duplicates_dir else f'{args.dir}/duplicates'
+        print(f'Moving duplicate images to {duplicates_dir}')
+
+        os.makedirs(duplicates_dir, exist_ok=True)
 
         for dup in duplicates:
-            os.rename(f'{args.dir}/{dup}', f'{args.dir}/duplicates/{dup}')
+            os.rename(f'{args.dir}/{dup}', f'{duplicates_dir}/{dup}')
 
 
 args = get_args()
