@@ -11,11 +11,10 @@ This software will expand a list of visual queries and download images from 3 se
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/#Download) 4.9.3 or above
 * Firefox
 * [Firefox webdriver](https://github.com/mozilla/geckodriver/releases)
-* [User-Agent addon for Firefox](https://addons.mozilla.org/en-US/firefox/addon/user-agent-string-switcher/)
 
 #### Setting up Firefox Webdriver
 
-There are couple of ways to install Firefox Webdriver. 
+There are couple of ways to install Firefox Webdriver.
 
 * If you are on Ubuntu based distribution `sudo apt-get install firefox-geckodriver` would install the Firefox webdriver.
 
@@ -26,13 +25,6 @@ File ending with `.zip` extension use `unzip <filename>` or file ending with `.t
 
 Finally, add the extracted file to `$PATH`. Refer [how to add executables to PATH](https://www.selenium.dev/documentation/en/webdriver/driver_requirements/#adding-executables-to-your-path)
 
-#### Install User Agent Addon
-
-If you encounter any error or pop up which asks for cookies that doesn't appear when the search is launched by the user. Ensure the `User-Agent` is recent with respect to your browser version.
-
-Refer to the section "[How to debug](#how-to-debug)"
-
-This addon is required only for debugging purposes.
 ### Create Expanded Query list
 
 The query expansion works by finding the top 50 keywords that best match the initial query using [www.keywordfinder.com](www.keywordfinder.com). The result is initial query appened by each keyword found.
