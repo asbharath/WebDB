@@ -9,6 +9,7 @@ This software will expand a list of visual queries and download images from 3 se
 * Python 3.8 or above
 * [Selenium](https://www.selenium.dev/documentation/en/selenium_installation/installing_selenium_libraries/#_python_) 3.141 or above
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/#Download) 4.9.3 or above
+* [tqdm](https://pypi.org/project/tqdm/)
 * Firefox
 * [Firefox webdriver](https://github.com/mozilla/geckodriver/releases)
 
@@ -27,7 +28,7 @@ Finally, add the extracted file to `$PATH`. Refer [how to add executables to PAT
 
 ### Create Expanded Query list
 
-The query expansion works by finding the top 50 keywords that best match the initial query using [www.keywordfinder.com](www.keywordfinder.com). The result is initial query appened by each keyword found.
+The query expansion works by finding the top 50 keywords that best match the initial query using [www.keywordfinder.com](www.keywordfinder.com). The result is initial query append by each keyword found.
 e.g. If initial query is `dog` the query expansion output would be `dog animal`, `dog pet`. etc.
 
 Run the bash script `expand.sh` with 1 argument file containing (the list of queries that are separated by line) from terminal
@@ -51,6 +52,8 @@ python download.py --queries <queries.txt or expanded_queries.txt> --directories
 * `--queries` A file containing the search queries or the expanded queries.
 * `--directories`: A file containing the directory name where the downloaded images are stored
 * `--run_headless`: Argument that doesn't display the browser when script runs. Don't pass this argument when you don't need to visualize the script in action. This is useful for debugging purposes and browser navigation works as expected.
+
+Note: There will be a `links.txt` file present inside each `directories` folder, which is used to check for duplicates.
 
 where queries.txt is a text file containing list of queries and dirnames.txt is the equivalent directory name of each query line by line.
 
@@ -77,14 +80,14 @@ All the search engines constantly try to introduce changes to their webpages in 
 
 We provide very basic methods for debugging the scripts.
 
-* We try to catch and log the exceptions in the console during HTML parsing or image retrevial. Analysing the stack trace could help identify the root cause.
+* We try to catch and log the exceptions in the console during HTML parsing or image retrieval. Analyzing the stack trace could help identify the root cause.
 * Visualizing the selenium action on the browser could help quickly identify any browser rendering issue. Remove `--run_headless` flag argument when invoking `download.py`.
-* We use [css selectors](https://www.w3schools.com/cssref/css_selectors.asp) in order get unqiuely identify selector tags in the webpage. Seach engines could update these tags which might cause the script to fail.
+* We use [css selectors](https://www.w3schools.com/cssref/css_selectors.asp) in order identify unique  selector tags in the webpage. Search engines could update these tags which might cause the script to fail.
 * Ensure you are using the latest version of Firefox browser and update the `User-Agent` accordingly. Depending upon browser version and User-Agent the page might render differently which could cause the script to fail.
 * If you observe slower network speed. Try increasing the script sleep time.
 
-The script is expected to run slower with varying sleep times. This is mimic human behaviour and not to flood server with constant requests.
-`Warning:` Repated requests with almost no wait time could lead to blacklisting of the user's IP.
+The script is expected to run slower with varying sleep times. This is mimic human behavior and not to flood server with constant requests.
+`Warning:` Repeated requests with almost no wait time could lead to blacklisting of the user's IP.
 
 ### How to use css selector
 * How to check tags are uniquely identified.
