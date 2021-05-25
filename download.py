@@ -14,19 +14,20 @@ args = parser.parse_args()
 
 def main(args):
     # Read the text files
-    queries = open_file(args.queries, mode='r')
-    dirnames = open_file(args.directories, mode='r')
+    queries = open_file(args.queries)
+    dirnames = open_file(args.directories)
 
     # start crawling the search engines
-    for line, dirs in zip(queries, dirnames):
-        queries = (line.rstrip()).split(',')  # get list of queries
-        for i, query in enumerate(queries):
-            dirs = dirs.rstrip()
-            query = query.lstrip(' ')
+    for q_line, d_line in zip(queries, dirnames):
+        queries = q_line.strip().split(',')
+        dirs = d_line.strip().split(',')
+        for i, (query, directory) in enumerate(zip(queries, dirs)):
+            directory = directory.strip()
+            query = query.strip()
             print(f"Downloading {query}: ")
-            BingImageScraper(query=query, save_img_dir=dirs, index=i, run_headless=args.run_headless).scrape()
-            GoogleImageScraper(query=query, save_img_dir=dirs, index=i, run_headless=args.run_headless).scrape()
-            YahooImageScraper(query=query, save_img_dir=dirs, index=i, run_headless=args.run_headless).scrape()
+            # BingImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
+            GoogleImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
+            # YahooImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
 
 
 if __name__ == "__main__":

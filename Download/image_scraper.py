@@ -2,10 +2,7 @@ import argparse
 import glob
 import os
 import logging
-import requests
-import sys
 import time
-import urllib
 from random import randint
 from urllib.request import urlretrieve, urlcleanup
 
@@ -14,25 +11,23 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 
-def open_file(file, mode):
+def open_file(file):
     """open file for reading or writing depending on the flag
 
     Args:
         file (str): File to be opened
-        mode (str): Which mode the file should be opened.Check https://docs.python.org/3/library/functions.html#open
 
     Returns:
         list: Returns a list containing the data read from the given file
     """
     assert os.path.isfile(file), f"{file} not a file"
-    with open(file, mode=mode) as f:
-        return f.readlines()
+    with open(file) as f:
+        return f.read().splitlines()
 
 
 class ImageScraper:
@@ -44,13 +39,13 @@ class ImageScraper:
         self.driver = self.get_webdriver(run_headless)
         self.images = list()
         self.wait = WebDriverWait(self.driver, timeout=5)
-        os.makedirs(self.save_img_dir, exist_ok=True)
+        os.makedirs(self.save_img_dir, exist_ok=True)  # create save_img_dir
         self.links_file = os.path.join(self.save_img_dir, "links.txt")
         if not os.path.isfile(self.links_file):  # create empty file if links.txt file not found within directory
             open(self.links_file, "w").close()
-            self.list_of_links = []
+            self.list_of_links = list()
         else:
-            self.list_of_links = open_file(self.links_file, mode='r')
+            self.list_of_links = open_file(self.links_file)
 
     def get_webdriver(self, headless):
         """Instantiate firefox webdriver.
@@ -84,9 +79,7 @@ class ImageScraper:
 
         while True:
             # Scroll down to the bottom.
-            # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            element = self.driver.find_element_by_tag_name("body")
-            element.send_keys(Keys.PAGE_DOWN)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             # Wait for the page to load.
             time.sleep(randint(2, 7))
@@ -272,22 +265,22 @@ class GoogleImageScraper(ImageScraper):
         self.get_url()
         assert self.driver.find_element_by_css_selector(self.search_results_tag).is_displayed(), f"Search results did not load!"
         # scroll and get more image link in the webpage
-        self.scroll_down()
         self.load_all_images()
         list_of_elements = self.get_all_elements_from_image_thumbnail()
         logging.info(f"total thumbnail images present {len(list_of_elements)}")
 
-        for element in list_of_elements:
+        for element in list_of_elements[:50]:
             try:
                 element.click()
                 time.sleep(0.5)
                 try:
-                    # 1st index is the source image with high resolution
-                    image = self.driver.find_elements_by_css_selector(self.full_res_image_tag)[1]
-                    img_src = image.get_attribute('src')
-                    if img_src is not None:
-                        if "http" in img_src and img_src not in self.list_of_links:
-                            self.images.append(img_src)
+                    # 3 images are retrieved and one of them containing 'jpg' has full image resolution.
+                    images = self.driver.find_elements_by_css_selector(self.full_res_image_tag)
+                    for image in images:
+                        img_src = image.get_attribute('src')
+                        if img_src is not None:
+                            if "jpg" in img_src and img_src not in self.list_of_links:
+                                self.images.append(img_src)
                 except Exception as e:
                     logging.error(f"Not able to get src attribute {e}")
             except Exception as e:
@@ -341,10 +334,10 @@ class YahooImageScraper(ImageScraper):
 
         for element in list_of_elements:
             try:
-                # 1st index is the source image with high resolution
                 images = element.find_elements_by_css_selector(self.full_res_image_tag)
                 if not images:
                     continue
+                # 1st index is the source image with high resolution
                 img_src = images[0].get_attribute('src')
                 if img_src is not None:
                     if "http" in img_src and img_src not in self.list_of_links:
