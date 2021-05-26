@@ -1,10 +1,9 @@
-import argparse
 import glob
 import os
 import logging
 import time
+import requests
 from random import randint
-from urllib.request import urlretrieve, urlcleanup
 
 from tqdm import tqdm
 from selenium import webdriver
@@ -14,6 +13,8 @@ from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import NoSuchElementException
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4422.0 Safari/537.36"
 
 
 def open_file(file):
@@ -31,10 +32,19 @@ def open_file(file):
 
 
 class ImageScraper:
-    def __init__(self, query, save_img_dir, index, run_headless):
+    def __init__(self, query, save_img_dir, index, num_of_images, run_headless):
+        """Initialize the variables
+
+        Args:
+            query (str): search query
+            save_img_dir (str): directory name where the images are saved
+            index (str): used in formatting the file name
+            run_headless (bool): run the script without launching the firefox browser
+        """
         self.query = query
-        self.save_img_dir = save_img_dir
+        self.save_img_dir = save_img_dir.replace(" ", "_")  # replace space with _
         str_replace = query.replace(" ", "_")
+        self.num_of_images = num_of_images
         self.file_format = f"{index}_{self.search_engine}_{str_replace}"
         self.driver = self.get_webdriver(run_headless)
         self.images = list()
@@ -46,6 +56,7 @@ class ImageScraper:
             self.list_of_links = list()
         else:
             self.list_of_links = open_file(self.links_file)
+        self.counter = 0
 
     def get_webdriver(self, headless):
         """Instantiate firefox webdriver.
@@ -63,8 +74,7 @@ class ImageScraper:
             browser_options.add_argument("--headless")
 
         profile = webdriver.FirefoxProfile()
-        profile.set_preference("general.useragent.override",
-                               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4422.0 Safari/537.36")
+        profile.set_preference("general.useragent.override", USER_AGENT)
 
         # create webdriver Firefox instance
         driver = webdriver.Firefox(options=browser_options, firefox_profile=profile)
@@ -94,6 +104,17 @@ class ImageScraper:
         # Scroll one last time
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
+    def get_image(self, url, image_file):
+        """Sends a GET request with the image URL provided and saves the image.
+
+        Args:
+            url (str): image url
+            image_file (str): image file name
+        """
+        img_request = requests.request("GET", url, headers={"User-Agent": USER_AGENT})
+        with open(image_file, "wb") as f:
+            f.write(img_request.content)
+
     def download_images(self):
         """Retrives images from the image url list and downloads one by one.
 
@@ -108,19 +129,16 @@ class ImageScraper:
             failure_count = 0
             success_count = 0
             write_links_file = open(self.links_file, 'a')
-            for image_url in tqdm(self.images, ascii=True, desc="Downloading images"):
-                image_file = os.path.join(self.save_img_dir, f"{self.file_format}_{str(index).zfill(5)}.jpg")
+            for image_url in tqdm(self.images, desc="Downloading images", ascii=True, ncols=100):
+                file_name = os.path.join(self.save_img_dir, f"{self.file_format}_{str(index).zfill(5)}.jpg")
                 try:
-                    urlretrieve(image_url, image_file)
-                    time.sleep(0.5)
+                    self.get_image(image_url, file_name)
                     success_count += 1
                     index += 1
                     write_links_file.writelines(f"\n{image_url}")  # append the image url in the links.txt file
                 except Exception as e:
                     logging.error(f"{e}, image URL: {image_url}")
                     failure_count += 1
-            # clean up
-            urlcleanup()
             write_links_file.close()
             logging.info(f"Failed to retrieve {failure_count} images")
             logging.info(f"Total number of images downloaded: {success_count}")
@@ -145,10 +163,13 @@ class ImageScraper:
             return int(index)
 
     def get_url(self):
+        """format the url and navigate to it.
+        """
         url = self.url + "?q=" + self.query
         if "google" in self.search_engine:
             url = url + "&tbm=isch"  # this is required to display image search results page for google.
         logging.info(url)
+        logging.info(f"Total number of images to be scraped: {self.num_of_images}")
         self.driver.get(url)
 
     def click_button(self, locator):
@@ -166,6 +187,8 @@ class ImageScraper:
             logging.error(f"Element with locator {locator} not found!")
 
     def load_all_images(self):
+        """scrolls down to load the dynamic webpage and clicks on the load more image button when found
+        """
         self.scroll_down()
         try:
             button_tag = self.driver.find_element_by_css_selector(self.see_more_image_button_tag)
@@ -235,6 +258,10 @@ class BingImageScraper(ImageScraper):
                 except Exception as e:
                     logging.error(f"Not able to get src attribute {e}")
                 next_image.click()
+                self.counter += 1
+                # break the loop when number of images is equal to scraped images
+                if self.counter > self.num_of_images:
+                    break
             self.click_button(self.button_close_iframe_tag)  # click the close button on the iframe
             self.driver.switch_to_default_content()  # switch context to the original window
         except Exception as e:
@@ -269,7 +296,7 @@ class GoogleImageScraper(ImageScraper):
         list_of_elements = self.get_all_elements_from_image_thumbnail()
         logging.info(f"total thumbnail images present {len(list_of_elements)}")
 
-        for element in list_of_elements[:50]:
+        for element in tqdm(list_of_elements, desc="Scraping google images", ascii=True, ncols=100):
             try:
                 element.click()
                 time.sleep(0.5)
@@ -285,6 +312,10 @@ class GoogleImageScraper(ImageScraper):
                     logging.error(f"Not able to get src attribute {e}")
             except Exception as e:
                 logging.error(f"Failed to retrieve image! {e}")
+            self.counter += 1
+            # break the loop when number of images is equal to scraped images
+            if self.counter > self.num_of_images:
+                break
         logging.info(f"Total number of new images found: {len(self.images)}")
 
         # clean up
@@ -298,7 +329,6 @@ class YahooImageScraper(ImageScraper):
     def __init__(self, *args, **kwargs):
         self.search_engine = "yahoo"
         self.url = "https://images.search.yahoo.com/search/images"
-        self.refuse_consent = ".btn.secondary.reject-all"
         self.search_results_tag = "section#mdoc"
         self.see_more_image_button_tag = ".ygbt.more-res"
         self.image_thumbnail_tag = "li[id*=resitem-]"
@@ -332,7 +362,7 @@ class YahooImageScraper(ImageScraper):
         list_of_elements = self.get_all_elements_from_image_thumbnail()
         logging.info(f"total thumbnail images present {len(list_of_elements)}")
 
-        for element in list_of_elements:
+        for element in tqdm(list_of_elements, desc="Scraping yahoo images", ascii=True, ncols=100):
             try:
                 images = element.find_elements_by_css_selector(self.full_res_image_tag)
                 if not images:
@@ -345,6 +375,10 @@ class YahooImageScraper(ImageScraper):
                         self.images.append(img_src)
             except Exception as e:
                 logging.error(f"not able to get src attribute {e}")
+            self.counter += 1
+            # break the loop when number of images is equal to scraped images
+            if self.counter > self.num_of_images:
+                break
 
         # clean up
         self.driver.delete_all_cookies()

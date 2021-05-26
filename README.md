@@ -13,6 +13,8 @@ This software will expand a list of visual queries and download images from 3 se
 * Firefox
 * [Firefox webdriver](https://github.com/mozilla/geckodriver/releases)
 
+Use the `requirements.txt` at the root of the repository for installing python dependencies.
+
 #### Setting up Firefox Webdriver
 
 There are couple of ways to install Firefox Webdriver.
@@ -42,15 +44,22 @@ The expanded query will be saved to the file `expanded_queries.txt` with entries
 
 ### Download Web Images
 
-User can download the images by running download.py using 3 arguments:
+User can download the images by running download.py using 5 arguments:
 example:
 
 ```bash
-python download.py --queries <queries.txt or expanded_queries.txt> --directories dirnames.txt --run_headless
+python download.py \
+	--search_engine all
+	--queries <queries.txt or expanded_queries.txt> \
+	--directories dirnames.txt \
+	--num_of_images 100 \
+	--run_headless
 ```
 
+* `--search_engine` Specify `all` as argument If user wishes to run the image scraper for all the engines or `bing` or `google` or `yahoo` for respective search engines.
 * `--queries` A file containing the search queries or the expanded queries.
 * `--directories`: A file containing the directory name where the downloaded images are stored
+* `--num_of_images` Specify the total number of images the user wishes to scrape. Note: its not necessary the number of images will be download and scraped to be equal. There might be some scenarios the image url might not be a valid one or download might fail depending on source website's response.
 * `--run_headless`: Argument that doesn't display the browser when script runs. Don't pass this argument when you don't need to visualize the script in action. This is useful for debugging purposes and browser navigation works as expected.
 
 Note: There will be a `links.txt` file present inside each `directories` folder, which is used to check for duplicates.

@@ -6,10 +6,18 @@ import time
 from Download.image_scraper import BingImageScraper, GoogleImageScraper, YahooImageScraper, open_file
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--queries", type=str, help='path to queries text file')
-parser.add_argument("--directories", type=str, help='path to directories text file')
-parser.add_argument("--run_headless", action="store_true", help='run the script without launching the chromium browser')
+parser.add_argument("--search_engine", type=str, required=True, choices=["all", "bing", "google", "yahoo"], help='path to queries text file')
+parser.add_argument("--queries", type=str, required=True, help='path to queries text file')
+parser.add_argument("--directories", type=str, required=True, help='path to directories text file')
+parser.add_argument("--num_of_images", type=int, default=100, help='number of images to be scraped')
+parser.add_argument("--run_headless", action="store_true", help='run the script without launching the firefox browser')
 args = parser.parse_args()
+
+MAP_SCRAPER = {
+    "bing": BingImageScraper,
+    "google": GoogleImageScraper,
+    "yahoo": YahooImageScraper,
+}
 
 
 def main(args):
@@ -25,9 +33,11 @@ def main(args):
             directory = directory.strip()
             query = query.strip()
             print(f"Downloading {query}: ")
-            # BingImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
-            GoogleImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
-            # YahooImageScraper(query=query, save_img_dir=directory, index=i, run_headless=args.run_headless).scrape()
+            if args.search_engine == "all":
+                for engine in MAP_SCRAPER.keys():
+                    MAP_SCRAPER[engine](query=query, save_img_dir=directory, index=i, num_of_images=args.num_of_images, run_headless=args.run_headless).scrape()
+            else:
+                MAP_SCRAPER[args.search_engine](query=query, save_img_dir=directory, index=i, num_of_images=args.num_of_images, run_headless=args.run_headless).scrape()
 
 
 if __name__ == "__main__":
