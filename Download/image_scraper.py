@@ -266,7 +266,7 @@ class BingImageScraper(ImageScraper):
                     break
                 self.counter += 1
                 # break the loop when number of images is equal to scraped images
-                if self.counter > self.num_of_images:
+                if self.counter == self.num_of_images:
                     break
             self.click_button(self.button_close_iframe_tag)  # click the close button on the iframe
             self.driver.switch_to_default_content()  # switch context to the original window
@@ -320,7 +320,7 @@ class GoogleImageScraper(ImageScraper):
                 logging.error(f"Failed to retrieve image! {e}")
             self.counter += 1
             # break the loop when number of images is equal to scraped images
-            if self.counter > self.num_of_images:
+            if self.counter == self.num_of_images:
                 break
         logging.info(f"Total number of new images found: {len(self.images)}")
 
@@ -383,7 +383,7 @@ class YahooImageScraper(ImageScraper):
                 logging.error(f"not able to get src attribute {e}")
             self.counter += 1
             # break the loop when number of images is equal to scraped images
-            if self.counter > self.num_of_images:
+            if self.counter == self.num_of_images:
                 break
         logging.info(f"Total number of new images found: {len(self.images)}")
 

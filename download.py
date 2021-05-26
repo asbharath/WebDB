@@ -7,11 +7,11 @@ from itertools import zip_longest
 from Download.image_scraper import BingImageScraper, GoogleImageScraper, YahooImageScraper, open_file
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--search_engine", type=str, required=True, choices=["all", "bing", "google", "yahoo"], help='path to queries text file')
+parser.add_argument("--search_engine", type=str, required=True, choices=["all", "bing", "google", "yahoo"], help='choose the search engine')
 parser.add_argument("--queries", type=str, required=True, help='path to queries text file')
 parser.add_argument("--directories", type=str, required=True, help='path to directories text file')
 parser.add_argument("--num_of_images", type=int, default=100, help='number of images to be scraped')
-parser.add_argument("--run_headless", action="store_true", help='run the script without launching the firefox browser')
+parser.add_argument("--run_headless", action="store_true", help='run the script without launching firefox browser')
 args = parser.parse_args()
 
 MAP_SCRAPER = {
@@ -30,7 +30,7 @@ def main(args):
     for q_line, d_line in zip(queries, dirnames):
         queries_list = q_line.strip().split(',')
         dirs_list = d_line.strip().split(',')
-        # if dirs_list contains only one directory, zip longers will replicate to match queries_list
+        # if dirs_list contains only one directory, zip longest will replicate to match queries_list
         for i, (query, directory) in enumerate(zip_longest(queries_list, dirs_list, fillvalue=dirs_list[0])):
             directory = directory.strip()
             query = query.strip()
