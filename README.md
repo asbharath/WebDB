@@ -56,7 +56,7 @@ python download.py \
 	--run_headless
 ```
 
-* `--search_engine` Specify `all` as argument If user wishes to run the image scraper for all the engines or `bing` or `google` or `yahoo` for respective search engines.
+* `--search_engine` Specify `all` as an argument, if user wishes to run the image scraper for all the engines or provide argument as `bing` or `google` or `yahoo` for respective search engine.
 * `--queries` A file containing the search queries or the expanded queries.
 * `--directories`: A file containing the directory name where the downloaded images are stored
 * `--num_of_images` Specify the total number of images the user wishes to scrape. Note: its not necessary the number of images will be download and scraped to be equal. There might be some scenarios the image url might not be a valid one or download might fail depending on source website's response.

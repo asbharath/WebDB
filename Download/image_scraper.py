@@ -10,7 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
@@ -243,7 +243,7 @@ class BingImageScraper(ImageScraper):
             self.driver.find_element_by_css_selector(self.image_thumbnail_tag).click()
             # find the iframe
             frame_locator = self.driver.find_element_by_css_selector(self.iframe_locator_tag)
-            # switch to iframe containing image carasoul
+            # switch to iframe containing image carousal
             self.wait.until(expected_conditions.frame_to_be_available_and_switch_to_it(frame_locator))
             time.sleep(1)
             # next image button
@@ -258,6 +258,12 @@ class BingImageScraper(ImageScraper):
                 except Exception as e:
                     logging.error(f"Not able to get src attribute {e}")
                 next_image.click()
+                # When the last image is reached this object no longer is present in the DOM, so we break the loop
+                try:
+                    next_image.is_displayed()
+                except StaleElementReferenceException:
+                    logging.info(f"{self.search_engine}: No more images to be displayed!")
+                    break
                 self.counter += 1
                 # break the loop when number of images is equal to scraped images
                 if self.counter > self.num_of_images:
@@ -379,10 +385,10 @@ class YahooImageScraper(ImageScraper):
             # break the loop when number of images is equal to scraped images
             if self.counter > self.num_of_images:
                 break
+        logging.info(f"Total number of new images found: {len(self.images)}")
 
         # clean up
         self.driver.delete_all_cookies()
         self.driver.close()
 
-        logging.info(f"Total number of new images found: {len(self.images)}")
         self.download_images()
