@@ -74,6 +74,7 @@ class ImageScraper:
             browser_options.add_argument("--headless")
 
         profile = webdriver.FirefoxProfile()
+        profile.accept_untrusted_certs = True
         profile.set_preference("general.useragent.override", USER_AGENT)
 
         # create webdriver Firefox instance
@@ -90,6 +91,7 @@ class ImageScraper:
         while True:
             # Scroll down to the bottom.
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # self.driver.find_element_by_css_selector("body").send_keys(Keys.PAGE_DOWN)
 
             # Wait for the page to load.
             time.sleep(randint(2, 7))
@@ -191,18 +193,17 @@ class ImageScraper:
         """
         self.scroll_down()
         try:
-            button_tag = self.driver.find_element_by_css_selector(self.see_more_image_button_tag)
+            # button_tag = self.driver.find_element_by_css_selector(self.see_more_image_button_tag)
+            while self.driver.find_element_by_css_selector(self.see_more_image_button_tag).is_displayed():
+                # click the button "see more images"
+                self.click_button(self.see_more_image_button_tag)
+                # Scroll till end.
+                self.scroll_down()
+                # break the loop if button not present
+                if not self.driver.find_element_by_css_selector(self.see_more_image_button_tag).is_displayed():
+                    break
         except NoSuchElementException:
-            logging.error(f"Element accessed using tag [{self.see_more_image_button_tag}] not found!")
-
-        while button_tag.is_displayed():
-            # click the button "see more images"
-            self.click_button(self.see_more_image_button_tag)
-            # Scroll till end.
-            self.scroll_down()
-            # break the loop if button not present
-            if not button_tag.is_displayed():
-                break
+            logging.info(f"Page does not contain load images button")
 
     def get_all_elements_from_image_thumbnail(self):
         """Gets all the webdriver elements from the image thumbnails in the search results page.
@@ -267,9 +268,8 @@ class BingImageScraper(ImageScraper):
                 self.counter += 1
                 # break the loop when number of images is equal to scraped images
                 if self.counter == self.num_of_images:
+                    logging.info(f"Number of scraped images limit {self.num_of_images} reached")
                     break
-            self.click_button(self.button_close_iframe_tag)  # click the close button on the iframe
-            self.driver.switch_to_default_content()  # switch context to the original window
         except Exception as e:
             logging.error(f"Failed to retrieve image! {e}")
         logging.info(f"Total number of new images found: {len(self.images)}")
@@ -289,39 +289,40 @@ class GoogleImageScraper(ImageScraper):
         self.see_more_image_button_tag = ".mye4qd"
         self.image_thumbnail_tag = "img.rg_i.Q4LuWd"
         self.full_res_image_tag = "img.n3VNCb"
-        self.next_image = "a.gvi3cf"  # This button is not recognized after the first loop.
+        self.window_pane = "div.l39u4d"
         super().__init__(*args, **kwargs)
 
     def scrape(self):
         """Google Image scrape function
+        TODO plan to use the image carosual
         """
         self.get_url()
         assert self.driver.find_element_by_css_selector(self.search_results_tag).is_displayed(), f"Search results did not load!"
-        # scroll and get more image link in the webpage
+        # load all images in the search results page
         self.load_all_images()
         list_of_elements = self.get_all_elements_from_image_thumbnail()
         logging.info(f"total thumbnail images present {len(list_of_elements)}")
 
-        for element in tqdm(list_of_elements, desc="Scraping google images", ascii=True, ncols=100):
+        for i, element in enumerate(tqdm(list_of_elements, desc="Scraping google images", ascii=True, ncols=100)):
+            # break the loop when number of images is equal to scraped images
+            if i == self.num_of_images:
+                logging.info(f"\nNumber of scraped images limit {self.num_of_images} reached")
+                break
             try:
                 element.click()
                 time.sleep(0.5)
+                self.wait.until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, self.window_pane)))
                 try:
-                    # 3 images are retrieved and one of them containing 'jpg' has full image resolution.
-                    images = self.driver.find_elements_by_css_selector(self.full_res_image_tag)
-                    for image in images:
-                        img_src = image.get_attribute('src')
-                        if img_src is not None:
-                            if "jpg" in img_src and img_src not in self.list_of_links:
-                                self.images.append(img_src)
+                    # 2nd index contains the image url
+                    image = self.driver.find_elements_by_css_selector(self.full_res_image_tag)[1]
+                    img_src = image.get_attribute('src')
+                    if img_src is not None:
+                        if "http" in img_src and img_src not in self.list_of_links:
+                            self.images.append(img_src)
                 except Exception as e:
                     logging.error(f"Not able to get src attribute {e}")
             except Exception as e:
                 logging.error(f"Failed to retrieve image! {e}")
-            self.counter += 1
-            # break the loop when number of images is equal to scraped images
-            if self.counter == self.num_of_images:
-                break
         logging.info(f"Total number of new images found: {len(self.images)}")
 
         # clean up
@@ -349,7 +350,7 @@ class YahooImageScraper(ImageScraper):
         # Yahoo refuse cookie on the initial popup
         try:
             if self.driver.find_element_by_css_selector("form.consent-form").is_displayed():
-                # agree to consent! Easier to click "Agree" than to disagree :-(
+                # agree to consent! Easier to click "Agree" than to click disagree :-(
                 self.driver.find_element_by_name('agree').click()
                 # wait till the search is complete
                 self.wait.until(expected_conditions.title_contains("Yahoo Image Search Results"))
@@ -358,17 +359,17 @@ class YahooImageScraper(ImageScraper):
 
         assert self.driver.find_element_by_css_selector(self.search_results_tag).is_displayed(), f"Search results did not load!"
 
-        # Yahoo the button is always visible, so we can't use load_all_images function
-        while self.driver.find_element_by_css_selector(self.see_more_image_button_tag).is_displayed():
-            self.scroll_down()
-            self.click_button(self.see_more_image_button_tag)
-            # this is necessary so that last image thumbnails loads without failing.
-            self.scroll_down()
+        # load all images in the search results page
+        self.load_all_images()
 
         list_of_elements = self.get_all_elements_from_image_thumbnail()
         logging.info(f"total thumbnail images present {len(list_of_elements)}")
 
-        for element in tqdm(list_of_elements, desc="Scraping yahoo images", ascii=True, ncols=100):
+        for i, element in enumerate(tqdm(list_of_elements, desc="Scraping yahoo images", ascii=True, ncols=100)):
+            # break the loop when number of images is equal to scraped images
+            if i == self.num_of_images:
+                logging.info(f"Number of scraped images limit {self.num_of_images} reached")
+                break
             try:
                 images = element.find_elements_by_css_selector(self.full_res_image_tag)
                 if not images:
@@ -382,9 +383,6 @@ class YahooImageScraper(ImageScraper):
             except Exception as e:
                 logging.error(f"not able to get src attribute {e}")
             self.counter += 1
-            # break the loop when number of images is equal to scraped images
-            if self.counter == self.num_of_images:
-                break
         logging.info(f"Total number of new images found: {len(self.images)}")
 
         # clean up
