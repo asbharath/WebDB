@@ -360,6 +360,7 @@ class YahooImageScraper(ImageScraper):
 
         assert self.driver.find_element_by_css_selector(self.search_results_tag).is_displayed(), f"Search results did not load!"
 
+        time.sleep(2)
         # load all images in the search results page
         self.load_all_images()
 
