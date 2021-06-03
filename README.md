@@ -9,12 +9,16 @@ This software will expand a list of visual queries and download images from 3 se
 * Python 3.8 or above
 * [Selenium](https://www.selenium.dev/documentation/en/selenium_installation/installing_selenium_libraries/#_python_) 3.141 or above
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/#Download) 4.9.3 or above
+* [tqdm](https://pypi.org/project/tqdm/)
 * Firefox
 * [Firefox webdriver](https://github.com/mozilla/geckodriver/releases)
+
+Use the `requirements.txt` at the root of the repository for installing python dependencies.
 
 #### Setting up Firefox Webdriver
 There are couple of ways to install Firefox Webdriver.
 
+There are couple of ways to install Firefox Webdriver.
 
 * If you are on debian based distribution `sudo apt-get install firefox-geckodriver` would install the Firefox webdriver. by default the driver is added to the `$PATH`.
 
@@ -24,11 +28,6 @@ or
 For file ending with `.zip` extension use `unzip <filename>` or file ending with `.tar.gz` extension use `tar -xvf <filename>`
 
 * Finally, add the extracted file to `$PATH`. Refer [how to add executables to PATH](https://www.selenium.dev/documentation/en/webdriver/driver_requirements/#adding-executables-to-your-path)
-
-Once the driver is installed, check by running `geckodriver` in the terminal. User should see similar output.
-> 1621246053648   geckodriver INFO    Listening on 127.0.0.1:4444
-
-Press `ctrl + c` to close the driver.
 
 ### Create Expanded Query list
 
@@ -46,18 +45,27 @@ The expanded query will be saved to the file `expanded_queries.txt` with entries
 
 ### Download Web Images
 
-User can download the images by running download.py using 3 arguments:
+User can download the images by running download.py using 5 arguments:
 example:
 
 ```bash
-python download.py --queries <queries.txt or expanded_queries.txt> --directories dirnames.txt --run_headless
+python download.py \
+	--search_engine all
+	--queries <queries.txt or expanded_queries.txt> \
+	--directories dirnames.txt \
+	--num_of_images 100 \
+	--run_headless
 ```
 
+* `--search_engine` Specify `all` as an argument, if user wishes to run the image scraper for all the engines or provide argument as `bing` or `google` or `yahoo` for respective search engine.
 * `--queries` A file containing the search queries or the expanded queries.
 * `--directories`: A file containing the directory name where the downloaded images are stored
+* `--num_of_images` Specify the total number of images the user wishes to scrape. Note: its not necessary the number of images will be download and scraped to be equal. There might be some scenarios the image url might not be a valid one or download might fail depending on source website's response.
 * `--run_headless`: Argument that doesn't display the browser when script runs. Don't pass this argument when you don't need to visualize the script in action. This is useful for debugging purposes and browser navigation works as expected.
 
-where `queries.txt` is a text file containing list of queries and dirnames.txt is the equivalent directory name of each query line by line.
+Note: There will be a `links.txt` file present inside each `directories` folder, which is used to check for duplicates.
+
+where queries.txt is a text file containing list of queries and dirnames.txt is the equivalent directory name of each query line by line.
 
 
 		queries.txt:	query1
@@ -84,7 +92,7 @@ We provide very basic methods for debugging the scripts.
 
 * We try to catch and log the exceptions in the console during HTML parsing or image retrieval. Analyzing the stack trace could help identify the root cause.
 * Visualizing the selenium action on the browser could help quickly identify any browser rendering issue. Remove `--run_headless` flag argument when invoking `download.py`.
-* We use [css selectors](https://www.w3schools.com/cssref/css_selectors.asp) in order get uniquely identify selector tags in the webpage. Search engines could update these tags which might cause the script to fail.
+* We use [css selectors](https://www.w3schools.com/cssref/css_selectors.asp) in order identify unique  selector tags in the webpage. Search engines could update these tags which might cause the script to fail.
 * Ensure you are using the latest version of Firefox browser and update the `User-Agent` accordingly. Depending upon browser version and User-Agent the page might render differently which could cause the script to fail.
 * If you observe slower network speed. Try increasing the script sleep time.
 
