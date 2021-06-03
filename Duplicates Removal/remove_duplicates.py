@@ -15,14 +15,14 @@ encoder_methods = {
 def get_args():
     parser = argparse.ArgumentParser('Duplicates removal tool',
         description='Encode images, find duplicates based on the encodings, and move the duplicates to a different location')
-    parser.add_argument('-r', '--dataset_root', type=Path, default='/', help='Root path for --dataset_dirs')
-    parser.add_argument('-d', '--dataset_dirs', nargs='+', default=[],
-        help='Input dataset directories, located in --dataset_root, to be checked for duplicates')
+    parser.add_argument('-r', '--dirs_root', type=Path, default='/', help='Root path for --dirs')
+    parser.add_argument('-d', '--dirs', nargs='+', default=[],
+        help='Input image directories, located in --dirs_root, to be checked for duplicates')
     parser.add_argument('--duplicates_dir', type=Path, default='duplicates',
         help='Directory for the duplicate images to be moved to')
     parser.add_argument('--encoder', type=str, choices=['CNN', 'DHash'], default='CNN', help='Type of encoding for features comparison')
     parser.add_argument('--threshold', type=float, default=0.9,
-        help='For hashing: max_distance_threshold, for CNN: min_similarity_threshold (note: the logic of these differs, refer to documentation)')
+        help='For hashing: max_distance_threshold, for CNN: min_similarity_threshold (note: the logic of these differs, refer to documentation of imagededup)')
     parser.add_argument('--display_duplicates', action='store_true', help='Show duplicate images that will be moved, requires tkinter')
     parser.add_argument('--dry_run', action='store_true', help='Does not remove images in dry run')
     parser.add_argument('--encodings_in', nargs='+', default=[], help='Input encodings path')

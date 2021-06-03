@@ -112,3 +112,7 @@ The script is expected to run slower with varying sleep times. This is mimic hum
 	```python
 	input_text_box = driver.find_element_by_css_selector("input.gLFyf.gsfi")
 	```
+
+### Deduplication
+
+To clean the scraped images from duplicates, use the script `remove_duplicates.py` from `Duplicates Removal`. Access the directory for a more in-depth `README`.
